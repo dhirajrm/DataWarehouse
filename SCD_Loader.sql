@@ -43,7 +43,7 @@ DECLARE @v_TODAY DATE = GETDATE()
                                 @v_TODAY + ' AS STRT_DT, ' + DATE_SUB(@v_TODAY, INTERVAL 1 DAY) + ' AS END_DT
                                 FROM ' + @i_STG_TABLE_NAME + 'STG INNER JOIN ' + @i_SCD_TABLE_NAME + 'SCD
                                 ON STG.' + @i_KEY + ' = SCD.' + @i_KEY + '
-                                WHERE
+                                WHERE ' + @v_SQL_CHANGE_CAPTURE + ';'
 
 
 
