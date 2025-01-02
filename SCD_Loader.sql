@@ -1,0 +1,52 @@
+CREATE PROCEDURE SCD_LOADER
+    @i_STG_TABLE_NAME NVARCHAR(100),
+    @i_SCD_TABLE_NAME NVARCHAR(100),
+    @i_KEY NVARCHAR(100)
+
+
+AS
+
+BEGIN
+
+DECLARE @v_TODAY DATE = GETDATE()
+
+-- STEP 1 : INSERT THE NEW RECORDS
+
+    DECLARE @v_SQL_INSERT NVARCHAR(MAX)
+    SET @v_SQL_INSERT = 'INSERT INTO ' + @i_SCD_TABLE_NAME +
+                        ' SELECT * FROM ' + @i_SCD_TABLE_NAME +
+                        ' WHERE CONCAT(' + @i_KEY + ') NOT IN (SELECT CONCAT(' + @i_KEY + ') FROM ' + @i_SCD_TABLE_NAME + ');'
+
+    EXEC(@v_SQL_INSERT)
+
+-- STEP 2 : CAPTURE THE UPDATED RECORDS
+
+    DECLARE @v_STG_COLUMNS NVARCHAR(MAX)
+    SET @v_STG_COLUMNS = ''
+
+    SELECT @v_STG_COLUMNS = STRING_AGG(COLUMN_NAME, ',') FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @i_STG_TABLE_NAME;
+
+-- BUILD THE CHANGE CAPTURE CONDITION
+
+    DECLARE @v_SQL_CHANGE_CAPTURE NVARCHAR(MAX)
+
+    SELECT @v_SQL_CHANGE_CAPTURE = STRING_AGG('STG.' + COLUMN_NAME + ' <> SCD.' + COLUMN_NAME, ' OR ') 
+                                    FROM STRING_SPLIT(@v_STG_COLUMNS, ',');
+
+
+-- BUILD QUERY TO INSERT THE UPDATED RECORDS
+
+    DECLARE @v_SQL_INSERT_UPDATED NVARCHAR(MAX)
+
+    SET @v_SQL_INSERT_UPDATED = 'INSERT INTO ' + @i_SCD_TABLE_NAME +
+                                ' SELECT ' + @v_STG_COLUMNS + ', ' + 
+                                @v_TODAY + ' AS STRT_DT, ' + DATE_SUB(@v_TODAY, INTERVAL 1 DAY) + ' AS END_DT
+                                FROM ' + @i_STG_TABLE_NAME + 'STG INNER JOIN ' + @i_SCD_TABLE_NAME + 'SCD
+                                ON STG.' + @i_KEY + ' = SCD.' + @i_KEY + '
+                                WHERE
+
+
+
+
+
+END;
